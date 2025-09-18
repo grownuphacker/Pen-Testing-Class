@@ -15,20 +15,6 @@
       "metadata": {
         "description": "Location for all resources."
       }
-    },
-    "repoUrl": {
-      "type": "string",
-      "defaultValue": "https://github.com/grownuphacker/Pen-Testing-Class",
-      "metadata": {
-        "description": "Public GitHub repo containing the Node.js listener code."
-      }
-    },
-    "branch": {
-      "type": "string",
-      "defaultValue": "main",
-      "metadata": {
-        "description": "Branch to deploy from."
-      }
     }
   },
   "resources": [
@@ -56,26 +42,15 @@
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]",
         "siteConfig": {
+          "linuxFxVersion": "NODE|20-lts",
           "appSettings": [
-            { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "0" }
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "https://studentlablogger.blob.core.windows.net/public/student-lab-logger.zip"
+            }
           ]
         }
-      },
-      "resources": [
-        {
-          "type": "sourcecontrols",
-          "apiVersion": "2022-03-01",
-          "name": "web",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]"
-          ],
-          "properties": {
-            "repoUrl": "[parameters('repoUrl')]",
-            "branch": "[parameters('branch')]",
-            "isManualIntegration": true
-          }
-        }
-      ]
+      }
     }
   ]
 }
