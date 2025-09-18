@@ -4,7 +4,7 @@
   "parameters": {
     "webAppName": {
       "type": "string",
-      "defaultValue": "[format('c2-lab-%s', uniqueString(resourceGroup().id))]",
+      "defaultValue": "[format('student-lab-{0}', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "Name of the web app."
       }
