@@ -54,12 +54,7 @@
         "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]"
       ],
       "properties": {
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]",
-        "siteConfig": {
-          "appSettings": [
-            { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "0" }
-          ]
-        }
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]"
       },
       "resources": [
         {
