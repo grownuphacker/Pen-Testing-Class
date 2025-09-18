@@ -16,7 +16,7 @@
         "description": "Location for all resources."
       }
     },
-    "repoUrl": {
+    "githubRepoUrl": {
       "type": "string",
       "defaultValue": "https://github.com/grownuphacker/Pen-Testing-Class",
       "metadata": {
@@ -56,9 +56,7 @@
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]",
         "siteConfig": {
-          "appSettings": [
-            { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "0" }
-          ]
+          "linuxFxVersion": "NODE|20-lts"
         }
       },
       "resources": [
@@ -70,7 +68,7 @@
             "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]"
           ],
           "properties": {
-            "repoUrl": "[parameters('repoUrl')]",
+            "repoUrl": "[parameters('githubRepoUrl')]",
             "branch": "[parameters('branch')]",
             "isManualIntegration": true
           }
