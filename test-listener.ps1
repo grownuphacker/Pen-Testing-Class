@@ -8,7 +8,7 @@ $serviceUrl = "student-lab-kpb6gwwmdimnw.azurewebsites.net/log"
 # Use whatever LLM you want
 $payload = @{
     newlinetest = "HTML newline <br>This is better <br>NO SCROLLING FOR YOU"
-    process = $(Get-Process | Select-Object -First 10 | ForEach-Object { "$($_.Name)`t$($_.Id)`t$($_.CPU)<br>" })
+    user = $Env:USERNAME
     lab     = "Adding more details. "
 }
 
