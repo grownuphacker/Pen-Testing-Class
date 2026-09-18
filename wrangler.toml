@@ -1,0 +1,10 @@
+name = "retro-hacker-lab"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "LOGS"
+id = "retro-hacker-logs"
+
+[vars]
+ENVIRONMENT = "development"

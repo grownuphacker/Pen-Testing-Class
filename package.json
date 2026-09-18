@@ -1,15 +1,16 @@
 {
-  "name": "student-lab-logger",
+  "name": "retro-hacker-lab",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "worker.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "node listener-validation.test.js"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node worker-validation.test.js"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=18.0.0"
   },
-  "dependencies": {
-    "express": "^4.18.2"
+  "devDependencies": {
+    "wrangler": "^3.99.0"
   }
 }
