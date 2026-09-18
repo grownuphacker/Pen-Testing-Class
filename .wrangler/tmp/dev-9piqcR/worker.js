@@ -45,7 +45,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
 // worker.js
 var REQUIRED_FIELDS = ["student_id", "hacker_handle", "filename", "public_ip", "data"];
 var BASE_URL = "https://n.0g.rip";
-var LOG_STORE = [];
+var MEMORY_LOG_STORE = globalThis.__NO_GRIP_LOG_STORE__ || (globalThis.__NO_GRIP_LOG_STORE__ = []);
 var VALID_STUDENT_IDS = {
   "10360396": "M.I.",
   "10197158": "A.A.",
@@ -478,8 +478,8 @@ function makeRow(entry) {
   `;
 }
 __name(makeRow, "makeRow");
-function getStudentStatus(studentId) {
-  const entries = loadEntries().filter((entry) => entry.student_id === studentId);
+async function getStudentStatus(studentId, env) {
+  const entries = (await loadEntries(env)).filter((entry) => entry.student_id === studentId);
   if (entries.length === 0) {
     return { status: "red", label: "No submission" };
   }
@@ -490,8 +490,8 @@ function getStudentStatus(studentId) {
   };
 }
 __name(getStudentStatus, "getStudentStatus");
-function statusRow(studentId) {
-  const status = getStudentStatus(studentId);
+async function statusRow(studentId, env) {
+  const status = await getStudentStatus(studentId, env);
   return `
     <tr>
       <td>${studentId}</td>
@@ -501,13 +501,33 @@ function statusRow(studentId) {
   `;
 }
 __name(statusRow, "statusRow");
-function loadEntries() {
-  return LOG_STORE.slice(-250);
+async function loadEntries(env) {
+  const store = env?.LOG_STORE || env?.NO_GRIP_LOGS || env?.SUBMISSIONS;
+  if (store && typeof store.get === "function") {
+    const raw = await store.get("entries");
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.slice(-250);
+        }
+      } catch (error) {
+      }
+    }
+    return [];
+  }
+  return MEMORY_LOG_STORE.slice(-250);
 }
 __name(loadEntries, "loadEntries");
-function saveEntries(entries) {
-  LOG_STORE.length = 0;
-  LOG_STORE.push(...entries.slice(-250));
+async function saveEntries(entries, env) {
+  const trimmed = entries.slice(-250);
+  const store = env?.LOG_STORE || env?.NO_GRIP_LOGS || env?.SUBMISSIONS;
+  if (store && typeof store.put === "function") {
+    await store.put("entries", JSON.stringify(trimmed));
+    return;
+  }
+  MEMORY_LOG_STORE.length = 0;
+  MEMORY_LOG_STORE.push(...trimmed);
 }
 __name(saveEntries, "saveEntries");
 var worker_default = {
@@ -518,12 +538,14 @@ var worker_default = {
       return new Response(LANDING_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (method === "GET" && url.pathname === "/dashboard") {
-      const entries = loadEntries();
+      const entries = await loadEntries(env);
       const rows = entries.slice().reverse().map(makeRow).join("") || '<tr><td colspan="7" class="empty">No payloads logged yet. Awaiting student submissions...</td></tr>';
       return new Response(DASHBOARD_HTML.replace("{{ROWS}}", rows), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (method === "GET" && url.pathname === "/status") {
-      const rows = Object.keys(VALID_STUDENT_IDS).sort().map(statusRow).join("");
+      const rows = (await Promise.all(
+        Object.keys(VALID_STUDENT_IDS).sort().map((studentId) => statusRow(studentId, env))
+      )).join("");
       return new Response(STATUS_HTML.replace("{{ROWS}}", rows), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (method === "POST" && url.pathname === "/") {
@@ -560,9 +582,9 @@ var worker_default = {
           public_ip: publicIp,
           data: buildWarningMessage(publicIp, initials)
         };
-        const entries = loadEntries();
+        const entries = await loadEntries(env);
         entries.push(entry);
-        saveEntries(entries);
+        await saveEntries(entries, env);
         return Response.json({ status: "accepted", received: entry }, { status: 200 });
       } catch (error) {
         return Response.json({

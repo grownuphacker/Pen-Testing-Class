@@ -98,6 +98,19 @@ async function main() {
       throw new Error('Dashboard page did not render expected branding');
     }
 
+    const statusPage = await new Promise((resolve, reject) => {
+      const req = http.get('http://127.0.0.1:8787/status', (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => resolve({ statusCode: res.statusCode, body }));
+      });
+      req.on('error', reject);
+    });
+
+    if (statusPage.statusCode !== 200 || !statusPage.body.includes('10350959') || !statusPage.body.includes('10362120')) {
+      throw new Error('Status page did not reflect persisted student submissions');
+    }
+
     console.log('Validation test passed.');
     process.exit(0);
   } finally {
