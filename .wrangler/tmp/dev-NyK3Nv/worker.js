@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-UhcERl/checked-fetch.js
+// .wrangler/tmp/bundle-tr0vdH/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -27,7 +27,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
   }
 });
 
-// .wrangler/tmp/bundle-UhcERl/strip-cf-connecting-ip-header.js
+// .wrangler/tmp/bundle-tr0vdH/strip-cf-connecting-ip-header.js
 function stripCfConnectingIPHeader(input, init) {
   const request = new Request(input, init);
   request.headers.delete("CF-Connecting-IP");
@@ -45,6 +45,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
 // worker.js
 var REQUIRED_FIELDS = ["student_id", "hacker_handle", "filename", "public_ip", "data"];
 var BASE_URL = "https://n.0g.rip";
+var LOG_STORE = [];
 var LANDING_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -310,27 +311,13 @@ function makeRow(entry) {
   `;
 }
 __name(makeRow, "makeRow");
-async function loadEntries(env) {
-  if (!env || !env.LOGS || typeof env.LOGS.get !== "function") {
-    return [];
-  }
-  const raw = await env.LOGS.get("entries");
-  if (!raw) {
-    return [];
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function loadEntries() {
+  return LOG_STORE.slice(-250);
 }
 __name(loadEntries, "loadEntries");
-async function saveEntries(env, entries) {
-  if (!env || !env.LOGS || typeof env.LOGS.put !== "function") {
-    return;
-  }
-  await env.LOGS.put("entries", JSON.stringify(entries.slice(-250)));
+function saveEntries(entries) {
+  LOG_STORE.length = 0;
+  LOG_STORE.push(...entries.slice(-250));
 }
 __name(saveEntries, "saveEntries");
 var worker_default = {
@@ -341,7 +328,7 @@ var worker_default = {
       return new Response(LANDING_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (method === "GET" && url.pathname === "/dashboard") {
-      const entries = await loadEntries(env);
+      const entries = loadEntries();
       const rows = entries.slice().reverse().map(makeRow).join("") || '<tr><td colspan="7" class="empty">No payloads logged yet. Awaiting student submissions...</td></tr>';
       return new Response(DASHBOARD_HTML.replace("{{ROWS}}", rows), { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
@@ -369,9 +356,9 @@ var worker_default = {
           public_ip: sanitize(payload.public_ip),
           data: sanitize(payload.data)
         };
-        const entries = await loadEntries(env);
+        const entries = loadEntries();
         entries.push(entry);
-        await saveEntries(env, entries);
+        saveEntries(entries);
         return Response.json({ status: "accepted", received: entry }, { status: 200 });
       } catch (error) {
         return Response.json({
@@ -425,7 +412,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-UhcERl/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-tr0vdH/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -457,7 +444,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-UhcERl/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-tr0vdH/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

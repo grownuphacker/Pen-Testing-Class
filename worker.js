@@ -1,5 +1,6 @@
 const REQUIRED_FIELDS = ['student_id', 'hacker_handle', 'filename', 'public_ip', 'data'];
 const BASE_URL = 'https://n.0g.rip';
+const LOG_STORE = [];
 
 const LANDING_HTML = `<!DOCTYPE html>
 <html>
@@ -268,30 +269,13 @@ function makeRow(entry) {
   `;
 }
 
-async function loadEntries(env) {
-  if (!env || !env.LOGS || typeof env.LOGS.get !== 'function') {
-    return [];
-  }
-
-  const raw = await env.LOGS.get('entries');
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function loadEntries() {
+  return LOG_STORE.slice(-250);
 }
 
-async function saveEntries(env, entries) {
-  if (!env || !env.LOGS || typeof env.LOGS.put !== 'function') {
-    return;
-  }
-
-  await env.LOGS.put('entries', JSON.stringify(entries.slice(-250)));
+function saveEntries(entries) {
+  LOG_STORE.length = 0;
+  LOG_STORE.push(...entries.slice(-250));
 }
 
 export default {
@@ -304,7 +288,7 @@ export default {
     }
 
     if (method === 'GET' && url.pathname === '/dashboard') {
-      const entries = await loadEntries(env);
+      const entries = loadEntries();
       const rows = entries.slice().reverse().map(makeRow).join('') || '<tr><td colspan="7" class="empty">No payloads logged yet. Awaiting student submissions...</td></tr>';
       return new Response(DASHBOARD_HTML.replace('{{ROWS}}', rows), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
@@ -336,9 +320,9 @@ export default {
           data: sanitize(payload.data)
         };
 
-        const entries = await loadEntries(env);
+        const entries = loadEntries();
         entries.push(entry);
-        await saveEntries(env, entries);
+        saveEntries(entries);
 
         return Response.json({ status: 'accepted', received: entry }, { status: 200 });
       } catch (error) {
