@@ -54,6 +54,14 @@ async function main() {
       data: 'do-not-store-this'
     });
 
+    const htmlPayload = await request('/', {
+      student_id: '10350959',
+      hacker_handle: 'neo',
+      filename: 'injected.html',
+      public_ip: '203.0.113.25',
+      data: '<h1>owned</h1><p>test</p>'
+    });
+
     const results = {
       invalidStatus: invalid.statusCode,
       validStatus: valid.statusCode,
@@ -77,12 +85,12 @@ async function main() {
       throw new Error(`Expected private IP payload to be accepted with 200, got ${privateIp.statusCode}`);
     }
 
-    if (!valid.body.includes('🚨I DIDN\'T READ THE INSTRUCTIONS') || !valid.body.includes('Love, J.R.')) {
-      throw new Error('Warning payload for sample public IP was not transformed to the required message');
+    if (htmlPayload.statusCode !== 200) {
+      throw new Error(`Expected HTML payload to be accepted with 200, got ${htmlPayload.statusCode}`);
     }
 
-    if (!privateIp.body.includes('🚨I\'VE FORGOTTEN NETWORK BASICS') || !privateIp.body.includes('Love, G.B.')) {
-      throw new Error('Warning payload for private IP was not transformed to the required message');
+    if (!htmlPayload.body.includes('<h1>owned</h1>') || !htmlPayload.body.includes('<p>test</p>')) {
+      throw new Error('HTML payload was rewritten instead of preserved as submitted');
     }
 
     const dashboard = await new Promise((resolve, reject) => {
@@ -98,6 +106,10 @@ async function main() {
       throw new Error('Dashboard page did not render expected branding');
     }
 
+    if (!dashboard.body.includes('View payload') || !dashboard.body.includes('&lt;h1&gt;owned&lt;/h1&gt;') || !dashboard.body.includes('&lt;p&gt;test&lt;/p&gt;')) {
+      throw new Error('Dashboard did not show the student payload in a code-formatted dropdown');
+    }
+
     const statusPage = await new Promise((resolve, reject) => {
       const req = http.get('http://127.0.0.1:8787/status', (res) => {
         let body = '';
@@ -109,6 +121,19 @@ async function main() {
 
     if (statusPage.statusCode !== 200 || !statusPage.body.includes('10350959') || !statusPage.body.includes('10362120')) {
       throw new Error('Status page did not reflect persisted student submissions');
+    }
+
+    const speedtestPage = await new Promise((resolve, reject) => {
+      const req = http.get('http://127.0.0.1:8787/speedtest?target=8.8.8.8', (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => resolve({ statusCode: res.statusCode, body }));
+      });
+      req.on('error', reject);
+    });
+
+    if (speedtestPage.statusCode !== 200 || !speedtestPage.body.includes('ping 8.8.8.8')) {
+      throw new Error('Speedtest page did not render the expected ping command output');
     }
 
     console.log('Validation test passed.');

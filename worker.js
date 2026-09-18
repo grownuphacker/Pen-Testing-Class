@@ -276,6 +276,130 @@ const LANDING_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const SPEEDTEST_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The No Grip Elite Hackery Society | Speedtest</title>
+  <style>
+    :root {
+      --bg: #050b08;
+      --panel: #0d1f18;
+      --green: #93ffb6;
+      --cyan: #7af5ff;
+      --muted: #c9e8d3;
+      --border: rgba(147, 255, 182, 0.45);
+      --glow: rgba(122, 245, 255, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Consolas", "Courier New", monospace;
+      background: radial-gradient(circle at top, #10251a 0%, var(--bg) 35%, #030806 100%);
+      color: var(--green);
+      padding: 32px 18px 60px;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 28px var(--glow);
+      background: rgba(13, 31, 24, 0.92);
+    }
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(20, 42, 32, 0.85);
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .content {
+      padding: 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 1rem;
+      background: rgba(3, 8, 6, 0.8);
+      border: 1px solid var(--border);
+      color: var(--green);
+      margin-bottom: 16px;
+    }
+    button {
+      background: rgba(20, 42, 32, 0.9);
+      color: var(--green);
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    details {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      background: rgba(5, 11, 8, 0.9);
+      padding: 10px 12px;
+    }
+    summary {
+      cursor: pointer;
+      color: var(--cyan);
+      font-weight: bold;
+    }
+    pre {
+      margin: 12px 0 0;
+      padding: 14px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: var(--green);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .nav {
+      padding: 12px 24px 0;
+    }
+    .nav a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>The No Grip Elite Hackery Society</h1>
+    </div>
+    <div class="nav"><a href="/">Return to intake</a></div>
+    <div class="content">
+      <form method="GET" action="/speedtest">
+        <label for="target">Target IP / Host</label>
+        <input id="target" name="target" value="{{TARGET}}" placeholder="8.8.8.8" />
+        <button type="submit">Run speedtest</button>
+      </form>
+      <details open>
+        <summary>Speedtest output</summary>
+        <pre>{{RESULT}}</pre>
+      </details>
+    </div>
+  </div>
+</body>
+</html>`;
+
 const DASHBOARD_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -361,6 +485,32 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       color: var(--cyan);
       text-decoration: none;
     }
+    details {
+      border: 1px solid var(--border);
+      background: rgba(5, 11, 8, 0.9);
+      padding: 8px 10px;
+      border-radius: 4px;
+    }
+    summary {
+      cursor: pointer;
+      color: var(--cyan);
+      font-weight: bold;
+      list-style: none;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    pre {
+      margin: 10px 0 0;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: var(--green);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -413,23 +563,37 @@ function isPrivateIp(ip) {
   );
 }
 
-function buildWarningMessage(publicIp, initials) {
-  const cleanInitials = sanitize(initials) || 'N/A';
-  if (publicIp === '10.10.10.10') {
-    return `🚨I DIDN'T READ THE INSTRUCTIONS\nLove, ${cleanInitials}`;
-  }
+function escapeForHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-  if (isPrivateIp(publicIp)) {
-    return `🚨I'VE FORGOTTEN NETWORK BASICS\nLove, ${cleanInitials}`;
-  }
+function speedtestResult(target) {
+  const cleanTarget = sanitize(target || '8.8.8.8');
+  const command = `ping ${cleanTarget}`;
+  const output = `$ ${command}\nPING ${cleanTarget} (${cleanTarget}) 56(84) bytes of data.\n64 bytes from ${cleanTarget}: icmp_seq=1 ttl=56 time=12.4 ms\n\n--- ${cleanTarget} ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss\nround-trip min/avg/max = 12.4/12.4/12.4 ms`;
 
-  return `Love, ${cleanInitials}`;
+  return {
+    command,
+    output
+  };
+}
+
+function renderSpeedtestPage(target) {
+  const cleanTarget = sanitize(target || '8.8.8.8');
+  const { output } = speedtestResult(cleanTarget);
+  return SPEEDTEST_HTML
+    .replace('{{TARGET}}', escapeForHtml(cleanTarget))
+    .replace('{{RESULT}}', escapeForHtml(output));
 }
 
 function makeRow(entry) {
-  const dataHtml = (entry.data || '')
-    .replace(/\n/g, '<br>')
-    .replace(/🚨/g, '<span style="color:#ff5a5a; font-size:1.8em; font-weight:bold;">🚨</span>');
+  const payloadText = String(entry.data ?? '');
+  const safePayload = escapeForHtml(payloadText);
 
   return `
     <tr>
@@ -438,7 +602,12 @@ function makeRow(entry) {
       <td>${entry.hacker_handle}</td>
       <td>${entry.filename}</td>
       <td>${entry.public_ip}</td>
-      <td><div style="white-space: pre-line; line-height:1.6;">${dataHtml}</div></td>
+      <td>
+        <details>
+          <summary>View payload</summary>
+          <pre>${safePayload}</pre>
+        </details>
+      </td>
       <td>${entry.client_ip}</td>
     </tr>
   `;
@@ -530,6 +699,11 @@ export default {
       return new Response(STATUS_HTML.replace('{{ROWS}}', rows), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
+    if (method === 'GET' && url.pathname === '/speedtest') {
+      const target = sanitize(url.searchParams.get('target')) || '8.8.8.8';
+      return new Response(renderSpeedtestPage(target), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+
     if (method === 'POST' && url.pathname === '/') {
       try {
         const payload = await request.json();
@@ -558,7 +732,7 @@ export default {
 
         const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
         const publicIp = sanitize(payload.public_ip);
-        const initials = VALID_STUDENT_IDS[rawStudentId];
+        const data = String(payload.data ?? '').trim();
         const entry = {
           timestamp: new Date().toISOString(),
           client_ip: clientIp,
@@ -566,7 +740,7 @@ export default {
           hacker_handle: sanitize(payload.hacker_handle),
           filename: sanitize(payload.filename),
           public_ip: publicIp,
-          data: buildWarningMessage(publicIp, initials)
+          data
         };
 
         const entries = await loadEntries(env);
