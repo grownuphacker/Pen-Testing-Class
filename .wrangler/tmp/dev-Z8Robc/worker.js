@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-3djz7N/checked-fetch.js
+// .wrangler/tmp/bundle-ayGnCl/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -27,7 +27,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
   }
 });
 
-// .wrangler/tmp/bundle-3djz7N/strip-cf-connecting-ip-header.js
+// .wrangler/tmp/bundle-ayGnCl/strip-cf-connecting-ip-header.js
 function stripCfConnectingIPHeader(input, init) {
   const request = new Request(input, init);
   request.headers.delete("CF-Connecting-IP");
@@ -335,11 +335,11 @@ __name(isPrivateIp, "isPrivateIp");
 function buildWarningMessage(publicIp, initials) {
   const cleanInitials = sanitize(initials) || "N/A";
   if (publicIp === "10.10.10.10") {
-    return `\u{1F6A8}I DIDN'T READ THE INSTRUCTIONS
+    return `\u{1F6A8} I DIDN'T READ THE INSTRUCTIONS
 Love, ${cleanInitials}`;
   }
   if (isPrivateIp(publicIp)) {
-    return `\u{1F6A8}I'VE FORGOTTEN NETWORK BASICS
+    return `\u{1F6A8} I'VE FORGOTTEN NETWORK BASICS
 Love, ${cleanInitials}`;
   }
   return `Love, ${cleanInitials}`;
@@ -472,7 +472,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-3djz7N/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-ayGnCl/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -504,7 +504,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-3djz7N/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-ayGnCl/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

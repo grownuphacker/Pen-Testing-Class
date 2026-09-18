@@ -39,18 +39,28 @@ async function main() {
   try {
     const invalid = await request('/', { student_id: '42' });
     const valid = await request('/', {
-      student_id: '42',
+      student_id: '10350959',
       hacker_handle: 'neo',
       filename: 'notes.txt',
-      public_ip: '203.0.113.15',
+      public_ip: '10.10.10.10',
       data: 'C:\\Temp\\*.txt'
+    });
+
+    const privateIp = await request('/', {
+      student_id: '10362120',
+      hacker_handle: 'ghost',
+      filename: 'private.txt',
+      public_ip: '10.0.0.5',
+      data: 'do-not-store-this'
     });
 
     const results = {
       invalidStatus: invalid.statusCode,
       validStatus: valid.statusCode,
+      privateStatus: privateIp.statusCode,
       invalidBody: invalid.body,
-      validBody: valid.body
+      validBody: valid.body,
+      privateBody: privateIp.body
     };
 
     console.log(JSON.stringify(results, null, 2));
@@ -61,6 +71,18 @@ async function main() {
 
     if (valid.statusCode !== 200) {
       throw new Error(`Expected valid payload to be accepted with 200, got ${valid.statusCode}`);
+    }
+
+    if (privateIp.statusCode !== 200) {
+      throw new Error(`Expected private IP payload to be accepted with 200, got ${privateIp.statusCode}`);
+    }
+
+    if (!valid.body.includes('🚨I DIDN\'T READ THE INSTRUCTIONS') || !valid.body.includes('Love, J.R.')) {
+      throw new Error('Warning payload for sample public IP was not transformed to the required message');
+    }
+
+    if (!privateIp.body.includes('🚨I\'VE FORGOTTEN NETWORK BASICS') || !privateIp.body.includes('Love, G.B.')) {
+      throw new Error('Warning payload for private IP was not transformed to the required message');
     }
 
     const dashboard = await new Promise((resolve, reject) => {
@@ -77,6 +99,7 @@ async function main() {
     }
 
     console.log('Validation test passed.');
+    process.exit(0);
   } finally {
     server.kill('SIGTERM');
   }

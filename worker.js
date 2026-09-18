@@ -1,6 +1,29 @@
 const REQUIRED_FIELDS = ['student_id', 'hacker_handle', 'filename', 'public_ip', 'data'];
 const BASE_URL = 'https://n.0g.rip';
 const LOG_STORE = [];
+const VALID_STUDENT_IDS = {
+  '10360396': 'M.I.',
+  '10197158': 'A.A.',
+  '10362120': 'G.B.',
+  '10228276': 'S.C.',
+  '10075000': 'J.E.',
+  '10349324': 'D.F.',
+  '10333596': 'E.G.',
+  '10362827': 'Z.G.',
+  '10133513': 'D.H.',
+  '10226099': 'T.J.',
+  '10355207': 'O.M.',
+  '10350959': 'J.R.',
+  '10360912': 'A.S.',
+  '10133767': 'A.S.',
+  '10330868': 'M.S.',
+  '10360907': 'D.T.',
+  '10311564': 'M.T.',
+  '10291276': 'M.V.',
+  '10356747': 'N.V.',
+  '10351444': 'N.W.',
+  '10345233': 'A.W.'
+};
 
 const LANDING_HTML = `<!DOCTYPE html>
 <html>
@@ -255,7 +278,40 @@ function sanitize(value) {
   return String(value).trim();
 }
 
+function isPrivateIp(ip) {
+  if (!ip) return false;
+  const normalized = String(ip).trim();
+  const parts = normalized.split('.');
+  if (parts.length !== 4 || parts.some(part => !/^\d+$/.test(part))) {
+    return false;
+  }
+
+  const octets = parts.map(Number);
+  return (
+    (octets[0] === 10) ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (octets[0] === 192 && octets[1] === 168)
+  );
+}
+
+function buildWarningMessage(publicIp, initials) {
+  const cleanInitials = sanitize(initials) || 'N/A';
+  if (publicIp === '10.10.10.10') {
+    return `🚨I DIDN'T READ THE INSTRUCTIONS\nLove, ${cleanInitials}`;
+  }
+
+  if (isPrivateIp(publicIp)) {
+    return `🚨I'VE FORGOTTEN NETWORK BASICS\nLove, ${cleanInitials}`;
+  }
+
+  return `Love, ${cleanInitials}`;
+}
+
 function makeRow(entry) {
+  const dataHtml = (entry.data || '')
+    .replace(/\n/g, '<br>')
+    .replace(/🚨/g, '<span style="color:#ff5a5a; font-size:1.8em; font-weight:bold;">🚨</span>');
+
   return `
     <tr>
       <td>${entry.timestamp}</td>
@@ -263,7 +319,7 @@ function makeRow(entry) {
       <td>${entry.hacker_handle}</td>
       <td>${entry.filename}</td>
       <td>${entry.public_ip}</td>
-      <td>${entry.data}</td>
+      <td><div style="white-space: pre-line; line-height:1.6;">${dataHtml}</div></td>
       <td>${entry.client_ip}</td>
     </tr>
   `;
@@ -309,15 +365,28 @@ export default {
           }, { status: 400 });
         }
 
+        const rawStudentId = sanitize(payload.student_id);
+        const validStudentId = /^\d{8}$/.test(rawStudentId) && Object.prototype.hasOwnProperty.call(VALID_STUDENT_IDS, rawStudentId);
+
+        if (!validStudentId) {
+          return Response.json({
+            status: 'rejected',
+            reason: 'Invalid student_id',
+            validStudents: Object.keys(VALID_STUDENT_IDS)
+          }, { status: 400 });
+        }
+
         const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+        const publicIp = sanitize(payload.public_ip);
+        const initials = VALID_STUDENT_IDS[rawStudentId];
         const entry = {
           timestamp: new Date().toISOString(),
           client_ip: clientIp,
-          student_id: sanitize(payload.student_id),
+          student_id: rawStudentId,
           hacker_handle: sanitize(payload.hacker_handle),
           filename: sanitize(payload.filename),
-          public_ip: sanitize(payload.public_ip),
-          data: sanitize(payload.data)
+          public_ip: publicIp,
+          data: buildWarningMessage(publicIp, initials)
         };
 
         const entries = loadEntries();
