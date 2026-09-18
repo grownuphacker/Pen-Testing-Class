@@ -22,7 +22,8 @@ const VALID_STUDENT_IDS = {
   '10291276': 'M.V.',
   '10356747': 'N.V.',
   '10351444': 'N.W.',
-  '10345233': 'A.W.'
+  '10345233': 'A.W.',
+  'B33FC4K3': 'Abe'
 };
 
 const LANDING_HTML = `<!DOCTYPE html>
