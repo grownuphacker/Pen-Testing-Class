@@ -26,6 +26,124 @@ const VALID_STUDENT_IDS = {
   'B33FC4K3': 'Abe'
 };
 
+const STATUS_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>The No Grip Elite Hackery Society | Student Status</title>
+  <style>
+    :root {
+      --bg: #050b08;
+      --panel: #0d1f18;
+      --green: #93ffb6;
+      --cyan: #7af5ff;
+      --muted: #c9e8d3;
+      --red: #ff6b6b;
+      --yellow: #ffd166;
+      --border: rgba(147, 255, 182, 0.45);
+      --glow: rgba(122, 245, 255, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Consolas", "Courier New", monospace;
+      background: radial-gradient(circle at top, #10251a 0%, var(--bg) 35%, #030806 100%);
+      color: var(--green);
+      padding: 32px 18px 60px;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 30px var(--glow);
+      background: rgba(13, 31, 24, 0.92);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(20, 42, 32, 0.85);
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .badge {
+      color: var(--cyan);
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.8rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background: rgba(23, 60, 45, 0.9);
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    td {
+      color: var(--muted);
+    }
+    .light {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 10px;
+      vertical-align: middle;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .green { background: var(--green); color: var(--green); }
+    .yellow { background: var(--yellow); color: var(--yellow); }
+    .red { background: var(--red); color: var(--red); }
+    .nav {
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>The No Grip Elite Hackery Society</h1>
+      <div class="badge">Student Status</div>
+    </div>
+    <div class="nav"><a href="/">Return to intake</a></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Student ID</th>
+          <th>Status</th>
+          <th>Submission</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ROWS}}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
 const LANDING_HTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -326,6 +444,34 @@ function makeRow(entry) {
   `;
 }
 
+function getStudentStatus(studentId) {
+  const entries = loadEntries().filter((entry) => entry.student_id === studentId);
+  if (entries.length === 0) {
+    return { status: 'red', label: 'No submission' };
+  }
+
+  const hasModification = entries.some((entry) => entry.data && (
+    entry.data.includes("I DIDN'T READ THE INSTRUCTIONS") ||
+    entry.data.includes("I'VE FORGOTTEN NETWORK BASICS")
+  ));
+
+  return {
+    status: hasModification ? 'yellow' : 'green',
+    label: hasModification ? 'Submitted with notice' : 'Submitted clean'
+  };
+}
+
+function statusRow(studentId) {
+  const status = getStudentStatus(studentId);
+  return `
+    <tr>
+      <td>${studentId}</td>
+      <td><span class="light ${status.status}"></span>${status.label}</td>
+      <td>${status.status === 'red' ? 'None' : 'Logged'}</td>
+    </tr>
+  `;
+}
+
 function loadEntries() {
   return LOG_STORE.slice(-250);
 }
@@ -350,6 +496,14 @@ export default {
       return new Response(DASHBOARD_HTML.replace('{{ROWS}}', rows), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
+    if (method === 'GET' && url.pathname === '/status') {
+      const rows = Object.keys(VALID_STUDENT_IDS)
+        .sort()
+        .map(statusRow)
+        .join('');
+      return new Response(STATUS_HTML.replace('{{ROWS}}', rows), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+
     if (method === 'POST' && url.pathname === '/') {
       try {
         const payload = await request.json();
@@ -367,13 +521,12 @@ export default {
         }
 
         const rawStudentId = sanitize(payload.student_id);
-        const validStudentId = /^\d{8}$/.test(rawStudentId) && Object.prototype.hasOwnProperty.call(VALID_STUDENT_IDS, rawStudentId);
+        const validStudentId = Object.prototype.hasOwnProperty.call(VALID_STUDENT_IDS, rawStudentId);
 
         if (!validStudentId) {
           return Response.json({
             status: 'rejected',
-            reason: 'Invalid student_id',
-            validStudents: Object.keys(VALID_STUDENT_IDS)
+            reason: 'Invalid student_id'
           }, { status: 400 });
         }
 
